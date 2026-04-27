@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Plus, Search, Pencil, Trash2, KeyRound } from 'lucide-react'
 import { getUsers, deleteUser } from './usersApi'
 import UserFormModal from './UserFormModal'
+import UserAvatar from '@/components/common/UserAvatar'
 import PageHeader from '@/components/common/PageHeader'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import Badge from '@/components/common/Badge'
@@ -100,7 +101,12 @@ export default function UsersPage() {
               )}
               {data?.data?.map((user) => (
                 <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/20">
-                  <td className="px-4 py-3 font-medium text-foreground">{user.name}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <UserAvatar user={user} size="sm" />
+                      <span className="font-medium text-foreground">{user.name}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{user.email}</td>
                   <td className="px-4 py-3">
                     <Badge variant="info">{user.role?.name}</Badge>

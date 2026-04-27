@@ -57,3 +57,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  .kbd {
+    @apply inline-flex items-center justify-center px-1.5 py-0.5 rounded border border-border bg-background text-[10px] font-medium text-muted-foreground shadow-sm;
+  }
+}

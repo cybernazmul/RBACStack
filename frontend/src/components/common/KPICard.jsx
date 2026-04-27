@@ -1,4 +1,5 @@
 import * as Icons from 'lucide-react'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 const colorMap = {
@@ -28,7 +29,11 @@ export default function KPICard({ title, value, subtitle, icon, color = 'blue', 
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+    <motion.div
+      whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(0,0,0,0.10)' }}
+      transition={{ duration: 0.2 }}
+      className="bg-card border border-border rounded-2xl p-5 shadow-sm group"
+    >
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground font-medium">{title}</p>
         <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110', colorMap[color])}>
@@ -44,6 +49,6 @@ export default function KPICard({ title, value, subtitle, icon, color = 'blue', 
         )}
         {subtitle && <span className="text-xs text-muted-foreground">{subtitle}</span>}
       </div>
-    </div>
+    </motion.div>
   )
 }

@@ -238,7 +238,7 @@ export default function PermissionsPage() {
       />
 
       {/* ── 1. Role filter chips ── */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
         {roles.map((role) => {
           const count = permissions.filter((p) => isAssigned(role.id, p.id)).length
           const active = selectedRoleId === role.id
@@ -330,7 +330,7 @@ export default function PermissionsPage() {
           <p className="text-sm">No permissions match your search</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {filteredModules.map(({ module, perms }) => {
             const granted = perms.filter((p) => isAssigned(selectedRoleId, p.id)).length
             const total = perms.length

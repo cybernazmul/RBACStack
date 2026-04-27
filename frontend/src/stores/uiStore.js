@@ -6,6 +6,7 @@ const savedTheme = localStorage.getItem('theme')
 export const useUIStore = create((set) => ({
   darkMode: savedTheme === 'dark',
   sidebarCollapsed: false,
+  mobileMenuOpen: false,
 
   toggleDarkMode: () =>
     set((state) => {
@@ -23,4 +24,6 @@ export const useUIStore = create((set) => ({
 
   toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   setSidebarCollapsed: (value) => set({ sidebarCollapsed: value }),
+  toggleMobileMenu: () => set((state) => ({ mobileMenuOpen: !state.mobileMenuOpen })),
+  closeMobileMenu: () => set({ mobileMenuOpen: false }),
 }))
