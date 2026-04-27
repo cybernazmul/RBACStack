@@ -18,12 +18,13 @@ model User {
   lastLoginAt   DateTime?
   resetToken    String?   @unique
   resetTokenExpiry DateTime?
-  roleId        String
-  role          Role      @relation(fields: [roleId], references: [id])
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  roleId          String
+  role            Role             @relation(fields: [roleId], references: [id])
+  refreshTokens   RefreshToken[]
+  auditLogs       AuditLog[]
+  userPermissions UserPermission[] // NEW: per-user permission overrides
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Role {
@@ -37,12 +38,13 @@ model Role {
 }
 
 model Permission {
-  id          String           @id @default(uuid())
-  name        String           @unique
-  module      String
-  description String?          @db.Text
-  roles       RolePermission[]
-  createdAt   DateTime         @default(now())
+  id              String           @id @default(uuid())
+  name            String           @unique
+  module          String
+  description     String?          @db.Text
+  roles           RolePermission[]
+  userPermissions UserPermission[] // NEW
+  createdAt       DateTime         @default(now())
 }
 
 model RolePermission {
@@ -76,4 +78,19 @@ model AuditLog {
   userAgent String?
   meta      Json?
   createdAt DateTime @default(now())
+}
+
+// NEW: User-level permission overrides — additive on top of role permissions
+// type: 'grant'  → gives this permission even if their role doesn't have it
+// type: 'revoke' → removes this permission even if their role has it
+model UserPermission {
+  id           String     @id @default(uuid())
+  userId       String
+  permissionId String
+  type         String     // 'grant' | 'revoke'
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, permissionId])
 }

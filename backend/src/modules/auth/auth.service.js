@@ -27,16 +27,30 @@ async function getUserWithPermissions(userId) {
           permissions: { include: { permission: true } },
         },
       },
+      // NEW: include user-level overrides — does NOT change existing structure
+      userPermissions: { include: { permission: true } },
     },
   })
   if (!user) return null
+
+  // Start with role permissions (unchanged logic)
+  const effectivePerms = new Set(
+    user.role.permissions.map((rp) => rp.permission.name)
+  )
+
+  // NEW: apply user-level overrides on top — grant adds, revoke removes
+  for (const override of user.userPermissions) {
+    if (override.type === 'grant')  effectivePerms.add(override.permission.name)
+    if (override.type === 'revoke') effectivePerms.delete(override.permission.name)
+  }
+
   return {
     id: user.id,
     name: user.name,
     email: user.email,
     isActive: user.isActive,
     role: { id: user.role.id, name: user.role.name },
-    permissions: user.role.permissions.map((rp) => rp.permission.name),
+    permissions: [...effectivePerms], // same field name, same type — nothing downstream breaks
   }
 }
 

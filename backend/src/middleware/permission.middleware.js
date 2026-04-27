@@ -11,13 +11,29 @@ function requirePermission(permissionName) {
 
       // Cache per request to avoid multiple DB calls on same request
       if (!req.userPermissions) {
+        // Step 1: get role permissions — UNCHANGED
         const role = await prisma.role.findUnique({
           where: { id: req.user.roleId },
           include: { permissions: { include: { permission: true } } },
         })
-        req.userPermissions = role?.permissions.map((rp) => rp.permission.name) || []
+        const effectivePerms = new Set(
+          role?.permissions.map((rp) => rp.permission.name) || []
+        )
+
+        // Step 2: apply user-level overrides — NEW, purely additive
+        const overrides = await prisma.userPermission.findMany({
+          where: { userId: req.user.id },
+          include: { permission: true },
+        })
+        for (const o of overrides) {
+          if (o.type === 'grant')  effectivePerms.add(o.permission.name)
+          if (o.type === 'revoke') effectivePerms.delete(o.permission.name)
+        }
+
+        req.userPermissions = [...effectivePerms]
       }
 
+      // This check is IDENTICAL to before — nothing changed downstream
       if (!req.userPermissions.includes(permissionName)) {
         return res.status(403).json({
           success: false,
