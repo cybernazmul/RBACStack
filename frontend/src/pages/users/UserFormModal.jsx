@@ -1,0 +1,121 @@
+// TEMPLATE FILE — part of admin-template v1.0
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { Loader2 } from 'lucide-react'
+import Modal from '@/components/common/Modal'
+import { createUser, updateUser } from './usersApi'
+import axiosClient from '@/api/axiosClient'
+
+const baseSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email'),
+  roleId: z.string().min(1, 'Role is required'),
+  isActive: z.boolean().optional(),
+})
+
+const createSchema = baseSchema.extend({
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[0-9]/, 'Must contain a number')
+    .regex(/[A-Z]/, 'Must contain an uppercase letter'),
+})
+
+const editSchema = baseSchema.extend({
+  password: z.string().min(8).optional().or(z.literal('')),
+})
+
+export default function UserFormModal({ open, user, onClose, onSuccess }) {
+  const isEdit = Boolean(user)
+  const schema = isEdit ? editSchema : createSchema
+
+  const { data: roles } = useQuery({
+    queryKey: ['roles-list'],
+    queryFn: () => axiosClient.get('/roles').then((r) => r.data.data),
+    enabled: open,
+  })
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(schema),
+  })
+
+  useEffect(() => {
+    if (open) {
+      reset(
+        user
+          ? { name: user.name, email: user.email, roleId: user.roleId, isActive: user.isActive, password: '' }
+          : { name: '', email: '', roleId: '', isActive: true, password: '' }
+      )
+    }
+  }, [open, user])
+
+  const mutation = useMutation({
+    mutationFn: (data) => isEdit ? updateUser(user.id, data) : createUser(data),
+    onSuccess: () => {
+      toast.success(isEdit ? 'User updated' : 'User created')
+      onSuccess()
+    },
+    onError: (e) => toast.error(e.response?.data?.error || 'Failed'),
+  })
+
+  function onSubmit(data) {
+    if (isEdit && !data.password) delete data.password
+    mutation.mutate(data)
+  }
+
+  const Field = ({ label, name, type = 'text', placeholder }) => (
+    <div>
+      <label className="block text-sm font-medium text-foreground mb-1.5">{label}</label>
+      <input
+        type={type}
+        {...register(name)}
+        placeholder={placeholder}
+        className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+      />
+      {errors[name] && <p className="mt-1 text-xs text-destructive">{errors[name].message}</p>}
+    </div>
+  )
+
+  return (
+    <Modal open={open} onClose={onClose} title={isEdit ? 'Edit User' : 'Add User'}>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <Field label="Full Name" name="name" placeholder="Jane Smith" />
+        <Field label="Email" name="email" type="email" placeholder="jane@example.com" />
+        <Field label={isEdit ? 'New Password (leave blank to keep)' : 'Password'} name="password" type="password" placeholder="••••••••" />
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Role</label>
+          <select
+            {...register('roleId')}
+            className="w-full px-3 py-2 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Select a role...</option>
+            {roles?.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+          {errors.roleId && <p className="mt-1 text-xs text-destructive">{errors.roleId.message}</p>}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input type="checkbox" id="isActive" {...register('isActive')} className="rounded" />
+          <label htmlFor="isActive" className="text-sm text-foreground">Active account</label>
+        </div>
+
+        <div className="flex gap-3 justify-end pt-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-accent">Cancel</button>
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+          >
+            {mutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {isEdit ? 'Save Changes' : 'Create User'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
